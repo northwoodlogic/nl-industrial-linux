@@ -175,7 +175,11 @@ static int pps_gpio_probe(struct platform_device *pdev)
 	ret = gpiod_to_irq(data->gpio_pin);
 	if (ret < 0) {
 		dev_err(dev, "failed to map GPIO to IRQ: %d\n", ret);
-		return -EINVAL;
+		ret = platform_get_irq(pdev, 0);
+		if (ret < 0) {
+			dev_err(dev, "failed to get platform IRQ: %d\n", ret);
+			return -EINVAL;
+		}
 	}
 	data->irq = ret;
 
