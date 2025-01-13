@@ -188,6 +188,16 @@
 			};
 		};
 	};
+
+	/* Configure pps-gpio input on GPIOAO_9 */
+	pps-gpio {
+		compatible = "pps-gpio";
+		gpios = <&gpio_ao GPIOAO_9 GPIO_ACTIVE_HIGH>;
+		interrupt-parent = <&gpio_intc>;
+		interrupts = <9 1>;
+		assert-rising-edge;
+		status = "okay";
+	};
 };
 
 &acodec {
