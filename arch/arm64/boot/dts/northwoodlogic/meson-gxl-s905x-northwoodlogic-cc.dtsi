@@ -340,15 +340,51 @@
 	vqmmc-supply = <&vddio_boot>;
 };
 
+&uart_AO {
+	status = "okay";
+	pinctrl-0 = <&uart_ao_a_pins>;
+	pinctrl-names = "default";
+};
+
 &uart_A {
 	status = "okay";
 	pinctrl-0 = <&uart_a_pins>;
 	pinctrl-names = "default";
 };
 
-&uart_AO {
-	status = "okay";
-	pinctrl-0 = <&uart_ao_a_pins>;
+&uart_B {
+	status = "disabled";
+	pinctrl-0 = <&uart_b_pins>;
+	pinctrl-names = "default";
+};
+
+&uart_C {
+	status = "disabled";
+	pinctrl-0 = <&uart_c_pins>;
+	pinctrl-names = "default";
+};
+
+&i2c_AO {
+	status = "disabled";
+	pinctrl-0 = <&i2c_ao_pins>;
+	pinctrl-names = "default";
+};
+
+&i2c_A {
+	status = "disabled";
+	pinctrl-0 = <&i2c_a_pins>;
+	pinctrl-names = "default";
+};
+
+&i2c_B {
+	status = "disabled";
+	pinctrl-0 = <&i2c_b_pins>;
+	pinctrl-names = "default";
+};
+
+&i2c_C {
+	status = "disabled";
+	pinctrl-0 = <&i2c_c_pins>;
 	pinctrl-names = "default";
 };
 
@@ -364,3 +400,68 @@
 	 */
 	phy-supply = <&hdmi_5v>;
 };
+
+&uart_ao_a_pins {
+	mux {
+		groups = "uart_tx_ao_a", "uart_rx_ao_a";
+		function = "uart_ao";
+		bias-pull-up;
+	};
+};
+
+&uart_a_pins {
+	mux {
+		groups = "uart_tx_a", "uart_rx_a";
+		function = "uart_a";
+		bias-pull-up;
+	};
+};
+
+&uart_b_pins {
+	mux {
+		groups = "uart_tx_b", "uart_rx_b";
+		function = "uart_b";
+		bias-pull-up;
+	};
+};
+
+&uart_c_pins {
+	mux {
+		groups = "uart_tx_c", "uart_rx_c";
+		function = "uart_c";
+		bias-pull-up;
+	};
+};
+
+&i2c_ao_pins {
+	mux {
+		groups = "i2c_sck_ao", "i2c_sda_ao";
+		function = "i2c_ao";
+		bias-pull-up;
+	};
+};
+
+&i2c_a_pins {
+	mux {
+		groups = "i2c_sck_a", "i2c_sda_a";
+		function = "i2c_a";
+		bias-pull-up;
+	};
+};
+
+&i2c_b_pins {
+	mux {
+		groups = "i2c_sck_b", "i2c_sda_b";
+		function = "i2c_b";
+		bias-pull-up;
+	};
+};
+
+&i2c_c_pins {
+	mux {
+		groups = "i2c_sck_c", "i2c_sda_c";
+		function = "i2c_c";
+		bias-pull-up;
+	};
+};
+
