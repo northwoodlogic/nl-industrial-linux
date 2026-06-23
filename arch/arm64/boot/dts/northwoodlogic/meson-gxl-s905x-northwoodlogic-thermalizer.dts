@@ -1,0 +1,219 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+
+/dts-v1/;
+#include "meson-gxl-s905x-northwoodlogic-cc.dtsi"
+
+/ {
+	model = "nl-thermalizer aml-s905x-cc";
+
+	aliases {
+		spi0 = &spi_rtd0;
+		spi1 = &spi_rtd1;
+		spi2 = &spi_rtd2;
+		serial0 = &uart_A;
+		serial1 = &uart_AO;
+		serial2 = &uart_C;
+		ethernet0 = &ethmac;
+	};
+
+/* put the pulse counter input on 
+ * 7J1 pins 13 and 14, GPIOAO_9 and GND respectively
+ *
+ * Pins 19, 21, 23 for UART C + dtr for Arduino module
+ *
+ * Pins 27, 28 for I2C B mode for character LCD 
+ */
+
+	/* RTD Sensor, channel 0
+	 * Header 7J1
+	 * pin3		clk	GPIOAO_5
+	 * pin5		mosi	GPIOAO_4
+	 * pin11	miso	GPIOAO_8
+	 * pin12	cs	GPIOAO_6
+	 * pin1		+3.3v
+	 * pin6		GND
+	 */
+	spi_rtd0: spi_rtd0 {
+		status = "okay";
+		compatible = "spi-gpio";
+		num-chipselects = <1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		sck-gpios = <&gpio_ao GPIOAO_5 GPIO_ACTIVE_HIGH>;
+		mosi-gpios = <&gpio_ao GPIOAO_4 GPIO_ACTIVE_HIGH>;
+		miso-gpios = <&gpio_ao GPIOAO_8 GPIO_ACTIVE_HIGH>;
+		cs-gpios = <&gpio_ao GPIOAO_6 GPIO_ACTIVE_LOW>;
+
+		spidev@0 {
+			compatible = "rohm,dh2228fv";
+			reg = <0>;
+			spi-max-frequency = <500000>;
+		};
+	};
+
+	/* RTD Sensor, channel 1
+	 * Header 7J1
+	 * pin16	clk,	GPIOX_14
+	 * pin18	mosi	GPIOX_15
+	 * pin22	miso	GPIOX_0
+	 * pin26	cs	GPIOX_1
+	 * pin17	+3.3v
+	 * pin20	GND
+	 */
+	spi_rtd1: spi_rtd1 {
+		status = "okay";
+		compatible = "spi-gpio";
+		num-chipselects = <1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		sck-gpios = <&gpio GPIOX_14 GPIO_ACTIVE_HIGH>;
+		mosi-gpios = <&gpio GPIOX_15 GPIO_ACTIVE_HIGH>;
+		miso-gpios = <&gpio GPIOX_0 GPIO_ACTIVE_HIGH>;
+		cs-gpios = <&gpio GPIOX_1 GPIO_ACTIVE_LOW>;
+
+		spidev@0 {
+			compatible = "rohm,dh2228fv";
+			reg = <0>;
+			spi-max-frequency = <500000>;
+		};
+	};
+
+	/* RTD Sensor, channel 2
+	 * Header 2J3
+	 * pin3		cs	GPIOH_9
+	 * pin4		miso	GPIOH_8
+	 * pin5		mosi	GPIOH_7
+	 * pin6		clk	GPIOH_6
+	 * pin7		GND
+	 * pin8		+3.3v
+	 */
+	spi_rtd2: spi_rtd2 {
+		status = "okay";
+		compatible = "spi-gpio";
+		num-chipselects = <1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cs-gpios = <&gpio GPIOH_9 GPIO_ACTIVE_LOW>;
+		miso-gpios = <&gpio GPIOH_8 GPIO_ACTIVE_HIGH>;
+		mosi-gpios = <&gpio GPIOH_7 GPIO_ACTIVE_HIGH>;
+		sck-gpios = <&gpio GPIOH_6 GPIO_ACTIVE_HIGH>;
+
+		spidev@0 {
+			compatible = "rohm,dh2228fv";
+			reg = <0>;
+			spi-max-frequency = <500000>;
+		};
+	};
+
+	pulsemeter-ekm {
+		status = "okay";
+		compatible = "interrupt-counter";
+		interrupts-extended = <&gpio_intc GPIOAO_9 IRQ_TYPE_EDGE_FALLING>;
+		pinctrl-0 = <&pulsemeter_pins>;
+		pinctrl-names = "default";
+
+		/*
+		 * There's a bug in the meson gpio irqchip driver in that the
+		 * output going to the GIC must always be rising edge. The type
+		 * is overwritten so it's always IRQ_TYPE_EDGE_RISING. The code
+		 * that sets up the port polarity register does work, but by
+		 * the time it's called the 'type' has already been overwritten
+		 * so the port filter is never configured to invert the signal
+		 * and get a falling edge irq.
+		 *
+		 * FIXME: this comment does not apply to 6.12 src:
+		 *
+		 * Given the way the pulse meter works, I really really do want
+		 * a a falling edge irq. I worked around this with a hard coded
+		 * polarity patch in the driver:
+		 *
+		 *   drivers/irqchip/irq-meson-gpio.c
+		 */
+	};
+
+};
+
+&pinctrl_aobus {
+	pulsemeter_pins: pulsemeter_pins {
+		mux {
+				groups = "GPIOAO_9";
+				function = "gpio_aobus";
+				bias-pull-up;
+		};
+	};
+};
+
+/* Header 7J1:
+ * pin19 = tx, pin21 = rx, pin23 = dtr
+ */
+&uart_C {
+	status = "okay";
+	dtr-gpios = <&gpio GPIOX_11 GPIO_ACTIVE_LOW>;
+};
+
+/* Header 7J1:
+ * pin27 = sda, pin28 = scl
+ */
+&i2c_B {
+	status = "okay";
+};
+
+&gpio_ao {
+	gpio-line-names = "UART TX",
+			  "UART RX",
+			  "Blue LED",
+			  "SDCard Voltage Switch",
+			  "rtd0-mosi-7J1.5",
+			  "rtd0-sclk-7J1.3",
+			  "rtd0-cs-7J1.12",
+			  "IR In",
+			  "rtd0-miso-7J1.11",
+			  "pulse-plus-7J1.13",
+			  /* GPIO_TEST_N */
+			  "7J1 Header Pin15";
+};
+
+&gpio {
+	gpio-line-names = /* Bank GPIOZ */
+			  "", "", "", "", "", "", "",
+			  "", "", "", "", "", "", "",
+			  "Eth Link LED", "Eth Activity LED",
+			  /* Bank GPIOH */
+			  "HDMI HPD", "HDMI SDA", "HDMI SCL",
+			  "HDMI_5V_EN", "9J1 Header Pin2",
+			  "Analog Audio Mute",
+			  "rtd2-sclk-2J3.6",
+			  "rtd2-mosi-2J3.5",
+			  "rtd2-miso-2J3.4",
+			  "rtd2-cs-2J3.3",
+			  /* Bank BOOT */
+			  "eMMC D0", "eMMC D1", "eMMC D2", "eMMC D3",
+			  "eMMC D4", "eMMC D5", "eMMC D6", "eMMC D7",
+			  "eMMC Clk", "eMMC Reset", "eMMC CMD",
+			  "ALT BOOT MODE", "", "", "", "eMMC Data Strobe",
+			  /* Bank CARD */
+			  "SDCard D1", "SDCard D0", "SDCard CLK", "SDCard CMD",
+			  "SDCard D3", "SDCard D2", "SDCard Det",
+			  /* Bank GPIODV */
+			  "", "", "", "", "", "", "", "", "", "", "", "",
+			  "", "", "", "", "", "", "", "", "", "", "", "",
+			  "Green LED", "VCCK Enable",
+			  "7J1 Header Pin27", "7J1 Header Pin28",
+			  "VCCK Regulator", "VDDEE Regulator",
+			  /* Bank GPIOX */
+			  "rtd1-miso-7J1.22", "rtd1-cs-7J1.26",
+			  "relay-k2-7J1.36", "relay-k4-7J1.38",
+			  "7J1 Header Pin40", "relay-k3-7J1.37",
+			  "7J1 Header Pin33", "relay-k1-7J1.35",
+			  "7J1 Header Pin19", "7J1 Header Pin21",
+			  "7J1 Header Pin24", "7J1 Header Pin23",
+			  "7J1 Header Pin8", "7J1 Header Pin10",
+			  "rtd1-sclk-7J1.16", "rtd1-mosi-7J1.18",
+			  "7J1 Header Pin32", "7J1 Header Pin29",
+			  "7J1 Header Pin31",
+			  /* Bank GPIOCLK */
+			  "7J1 Header Pin7", "";
+};
